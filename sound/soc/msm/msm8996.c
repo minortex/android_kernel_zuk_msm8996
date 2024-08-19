@@ -515,7 +515,7 @@ static struct wcd_mbhc_config wcd_mbhc_cfg = {
 static int gnd_mic_gpio_state = -1;
 static int headset_standard_get = 0;
 static int headset_type_standard = -1; // 0 America, 1 Europe standard
-static int headset_standard_get_parm_set(const char *val, struct kernel_param *kp)
+static int headset_standard_get_parm_set(const char *val, const struct kernel_param *kp)
 {
 	param_set_int(val, kp);
 	if (1 == headset_standard_get) {
@@ -533,7 +533,7 @@ static int headset_standard_get_parm_set(const char *val, struct kernel_param *k
 }
 module_param_call(headset_standard_get, headset_standard_get_parm_set, param_get_int,
 				  &headset_standard_get, 0644);
-static int headset_type_standard_parm_set(const char *val, struct kernel_param *kp)
+static int headset_type_standard_parm_set(const char *val, const struct kernel_param *kp)
 {
 	param_set_int(val, kp);
 	return 0;
