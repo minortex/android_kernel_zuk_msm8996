@@ -29,13 +29,10 @@ unsigned int aa_hash_size(void)
 	return apparmor_hash_size;
 }
 
-int aa_calc_profile_hash(struct aa_profile *profile, u32 version, void *start,
-			 size_t len)
+int aa_calc_profile_hash(struct aa_profile *profile, u32 version, void *start, size_t len)
 {
-	struct {
-		struct shash_desc shash;
-		char ctx[crypto_shash_descsize(apparmor_tfm)];
-	} desc;
+	struct shash_desc *desc;
+	char *ctx;
 	int error = -ENOMEM;
 	u32 le32_version = cpu_to_le32(version);
 
@@ -46,30 +43,39 @@ int aa_calc_profile_hash(struct aa_profile *profile, u32 version, void *start,
 	if (!profile->hash)
 		goto fail;
 
-	desc.shash.tfm = apparmor_tfm;
-	desc.shash.flags = 0;
-
-	error = crypto_shash_init(&desc.shash);
-	if (error)
-		goto fail;
-	error = crypto_shash_update(&desc.shash, (u8 *) &le32_version, 4);
-	if (error)
-		goto fail;
-	error = crypto_shash_update(&desc.shash, (u8 *) start, len);
-	if (error)
-		goto fail;
-	error = crypto_shash_final(&desc.shash, profile->hash);
-	if (error)
+	desc = kzalloc(sizeof(*desc) + crypto_shash_descsize(apparmor_tfm), GFP_KERNEL);
+	if (!desc)
 		goto fail;
 
+	desc->tfm = apparmor_tfm;
+	desc->flags = 0;
+
+	ctx = (char *)(desc + 1);  // 获取动态分配的空间来保存ctx
+	error = crypto_shash_init(desc);
+	if (error)
+		goto fail_desc;
+	error = crypto_shash_update(desc, (u8 *)&le32_version, 4);
+	if (error)
+		goto fail_desc;
+	error = crypto_shash_update(desc, (u8 *)start, len);
+	if (error)
+		goto fail_desc;
+	error = crypto_shash_final(desc, profile->hash);
+	if (error)
+		goto fail_desc;
+
+	kfree(desc);
 	return 0;
 
+fail_desc:
+	kfree(desc);
 fail:
 	kfree(profile->hash);
 	profile->hash = NULL;
 
 	return error;
 }
+
 
 static int __init init_profile_hash(void)
 {

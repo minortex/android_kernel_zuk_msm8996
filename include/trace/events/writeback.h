@@ -141,11 +141,19 @@ static inline size_t __trace_wb_cgroup_size(struct bdi_writeback *wb)
 
 static inline void __trace_wb_assign_cgroup(char *buf, struct bdi_writeback *wb)
 {
-	struct cgroup *cgrp = wb->memcg_css->cgroup;
-	char *path;
+    struct cgroup *cgrp = wb->memcg_css->cgroup;
+    int ret;
 
-	path = cgroup_path(cgrp, buf, kernfs_path_len(cgrp->kn) + 1);
-	WARN_ON_ONCE(path != buf);
+    ret = cgroup_path(cgrp, buf, kernfs_path_len(cgrp->kn) + 1);
+    if (ret < 0) {
+        // 处理错误
+        return;
+    }
+
+    // 如果 cgroup_path 返回成功，则 ret 应该是 buf 的指针
+    char *path = buf;
+    
+    WARN_ON_ONCE(path != buf);
 }
 
 static inline size_t __trace_wbc_cgroup_size(struct writeback_control *wbc)
