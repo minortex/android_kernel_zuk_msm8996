@@ -186,4 +186,3 @@ obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_ESOC)              += esoc/
 obj-$(CONFIG_TEE)		+= tee/
 obj-$(CONFIG_FPC1020_REE) += fingerprint/
-obj-$(CONFIG_KSU) += kernelsu/
